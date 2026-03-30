@@ -1,4 +1,9 @@
-WORK IN PROGRESS
+WORK IN PROGRESS:TODO (in progression order)
+- add hardware tests and intermediary debug setups
+- add mechanical building indications
+- develop command program on Arduino
+- integration with LeRobot framework
+- first tests and demos
 
 # LeMeccaBot
 
