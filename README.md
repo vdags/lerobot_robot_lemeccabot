@@ -1,4 +1,5 @@
 WORK IN PROGRESS:TODO (in progression order)
+- update ```./hardware/hardware_list.md```
 - add mechanical building indications
 - add control layer to firmware (impedance control)
 - integration with LeRobot framework
@@ -27,7 +28,7 @@ To build the robot itself, find the building guide here ```hardware/building_gui
 
 Circuit is kept as simple as possible, considering Arduino Uno R3 ports and limitations. In further optimisation, I may change controller to a cheaper and more apropriated one. Simply, Arduino Uno is one of the most rife microcontroller, so you may have one already if you plan to do this robot. It was the case for me. ;)
 
-See [here][./hardware/electronical_circuit.md ] for the scheme. 
+See [here](./hardware/schematics_leMeccaBot.png ) for the schematics. 
 
 NB: A proper IC specific design might come in the future, but for now, let's make things work first. :)
 
