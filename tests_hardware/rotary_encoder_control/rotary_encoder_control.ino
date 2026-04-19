@@ -1,21 +1,22 @@
 #include <Servo.h>
 
-#define NUM_DEVICES 6
+#define NUM_DEVICES 5
 
 #define DIRECTION_CW  0
 #define DIRECTION_CCW 1
+#define PRECISION 5
 
 // ================= PIN CONFIG =================
 
 // Encoder pins (CLK, DT pairs)
-int CLK_PINS[NUM_DEVICES] = {2, 4, 6, 8, 10, 12};
-int DT_PINS[NUM_DEVICES]  = {3, 5, 7, 9, 11, 13};
+int CLK_PINS[NUM_DEVICES] = {2, 4, 6, 8, 10};
+int DT_PINS[NUM_DEVICES]  = {3, 5, 7, 9, 11};
 
 // Servo pins
-int SERVO_PINS[NUM_DEVICES] = {A0, A1, A2, A3, A4, A5};
+int SERVO_PINS[NUM_DEVICES] = {A0, A1, A2, A3, A4};
 
 // Initial servo positions (modifiable later)
-int initialPositions[NUM_DEVICES] = {90, 160, 0, 180, 120, 0};
+int initialPositions[NUM_DEVICES] = {90, 180, 150, 120, 0};
 
 // ================= VARIABLES =================
 
@@ -56,10 +57,10 @@ void loop() {
     if (CLK_state[i] != prev_CLK_state[i] && CLK_state[i] == HIGH) {
 
       if (digitalRead(DT_PINS[i]) == HIGH) {
-        counter[i]--;
+        counter[i]=counter[i]-PRECISION;
         direction[i] = DIRECTION_CCW;
       } else {
-        counter[i]++;
+        counter[i]=counter[i]+PRECISION;
         direction[i] = DIRECTION_CW;
       }
 

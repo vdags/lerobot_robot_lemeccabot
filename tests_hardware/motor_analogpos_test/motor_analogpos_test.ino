@@ -9,7 +9,6 @@
 #include <Servo.h>
 
 const int servoPin = 13;  // Define the servo pin
-const int powerPin = 2; 
 int angle = 0;           // Initialize the angle variable to 0 degrees
 Servo servo;             // Create a servo object
 const int analogPin = A0;
