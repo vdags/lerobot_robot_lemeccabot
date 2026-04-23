@@ -45,10 +45,18 @@ Then, finally screw back the cover and motor is ready to be tested with ```./tes
 
 ### PTK 7465
 
+To modify PTK7465, the principle is the same.
+
+- Unscrew cover. Be also cautious not to move reductor.
 <div><img src="../images/servos_modification/PTK7465/01.jpeg" style="width:20%" onerror="this.onerror=null; this.src='images/pieces/meccano/angle_bracket.jpeg';"/> </div>
 
+- Tiny change of layout: rotate the controller for getting access to potentiometer pins (the ones with red wires). Once again, the pin where to sold the additionnal wire is the center pin. 
 <div><img src="../images/servos_modification/PTK7465/02.jpeg" style="width:20%" onerror="this.onerror=null; this.src='images/pieces/meccano/angle_bracket.jpeg';"/> </div>
 
+- Rotate the controller back to its place.
 <div><img src="../images/servos_modification/PTK7465/03.jpeg" style="width:20%" onerror="this.onerror=null; this.src='images/pieces/meccano/angle_bracket.jpeg';"/> </div>
 
+- Widen cover wire's hole with same constraints and method.
 <div><img src="../images/servos_modification/PTK7465/04.jpeg" style="width:20%" onerror="this.onerror=null; this.src='images/pieces/meccano/angle_bracket.jpeg';"/> </div>
+
+- Test your modified motor as well with  ```./tests_hardware/motor_analogpos_test``` circuit.
