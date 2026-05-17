@@ -4,7 +4,7 @@ from lerobot.cameras import make_cameras_from_configs
 from lerobot.motors import Motor, MotorNormMode
 from firmware.sg90 import SG90MotorsBus
 from lerobot.robots import Robot
-from LeMeccaBot.config_lemeccabot import LeMeccaBotConfig
+from LeMeccaBot.lerobot_robot_lemeccabot.config_lemeccabot import LeMeccaBotConfig
 
 class LeMeccaBot(Robot):
     config_class = LeMeccaBotConfig
@@ -28,6 +28,8 @@ class LeMeccaBot(Robot):
     @property
     def _motors_ft(self) -> dict[str, type]:
         return {
+            "joint_0.pos": float,
+            "joint_0.torque": float,
             "joint_1.pos": float,
             "joint_1.torque": float,
             "joint_2.pos": float,
@@ -36,8 +38,6 @@ class LeMeccaBot(Robot):
             "joint_3.torque": float,
             "joint_4.pos": float,
             "joint_4.torque": float,
-            "joint_5.pos": float,
-            "joint_5.torque": float,
         }
 
     @property
@@ -115,23 +115,28 @@ class LeMeccaBot(Robot):
 
     def configure(self) -> None:
         with self.bus.torque_disabled():
-            self.bus.configure_motors()
-            for motor in self.bus.motors:
-                self.bus.write("Operating_Mode", motor, OperatingMode.POSITION.value) #TODO add to firmware Pos/Torque mode switch
-                self.bus.write("P_Coefficient", motor, 16) #TODO add to firmware and make overwritable parameter
-                self.bus.write("I_Coefficient", motor, 0)  #TODO add to firmware and make overwritable parameter
-                self.bus.write("D_Coefficient", motor, 32) #TODO add to firmware and make overwritable parameter  
+            self.bus.write_register("CMOD", LeMeccaBotConfig.CMOD) 
+            self.bus.write_register("KP", LeMeccaBotConfig.KP) 
+            self.bus.write_register("KI", LeMeccaBotConfig.KI) 
+            self.bus.write_register("KD", LeMeccaBotConfig.KD) 
+            self.bus.write_register("servoMinCmd", LeMeccaBotConfig.servoMinCmd) 
+            self.bus.write_register("servoMaxCmd", LeMeccaBotConfig.servoMaxCmd) 
+            self.bus.write_register("servoMinFeedback", LeMeccaBotConfig.servoMinFeedback) 
+            self.bus.write_register("servoMaxFeedback", LeMeccaBotConfig.servoMaxFeedback)
+
 
 def get_observation(self) -> dict[str, Any]:
     if not self.is_connected:
         raise ConnectionError(f"{self} is not connected.")
 
+    response = self.bus.sync_read()
+
     # Read arm position
-    obs_dict = self.bus.sync_read("Present_Position") #TODO add cmd support for sync_read
+    obs_dict = self.bus.sync_read("F")
     obs_dict = {f"{motor}.pos": val for motor, val in obs_dict.items()}
 
     # Read arm torque
-    torque_dict = self.bus.sync_read("Present_Torque") #TODO add cmd support for sync_read
+    torque_dict = self.bus.sync_read("I")
     torque_dict = {f"{motor}.torque": val for motor, val in torque_dict.items()}
     obs_dict.update(torque_dict)
 
@@ -145,7 +150,7 @@ def send_action(self, action: dict[str, Any]) -> dict[str, Any]:
     goal_pos = {key.removesuffix(".pos"): val for key, val in action.items()}
 
     # Send goal position to the arm
-    self.bus.sync_write("Goal_Position", goal_pos) #TODO add cmd support for sync_read
+    self.bus.sync_write("W", goal_pos) #TODO add cmd support for sync_read
 
     return action
 

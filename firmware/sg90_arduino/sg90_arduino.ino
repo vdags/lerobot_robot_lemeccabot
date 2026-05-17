@@ -1,18 +1,18 @@
 #include <Servo.h>
-
+int BAUDRATE = 9600;
 const byte N_SERVOS = 6;
-
+// TODO Add overwritable parameters for servo limits, PID gains, etc.
 
 //==============================================
 //  Pin layout
 //==============================================
 
-byte servoPins[N_SERVOS] = {3, 5, 7, 9, 10, 11};
+byte servoPins[N_SERVOS] = {3, 5, 6, 9, 10, 11};
 
 // Multiplexer pins (S3=4, S2=6, S1=8, S0=12)
 const byte MUX_S0 = 12;
 const byte MUX_S1 = 8;
-const byte MUX_S2 = 6;
+const byte MUX_S2 = 7;
 const byte MUX_S3 = 4;
 const byte MUX_OUT = A0;
 
@@ -23,20 +23,20 @@ const byte MUX_OUT = A0;
 // ==============================================
 // Servo parameters
 // ==============================================
-byte servoStartPos[N_SERVOS] = {10,10,10,10,10,10}; // Start position for each servo.
+byte servoStartPos[N_SERVOS] = {100,170,100,100,90,90}; // Start position for each servo.
 
 // Servo min and max accepted position commands both for safety and servo's limit detection.
-byte servoMinCmd[N_SERVOS] = {10,10,10,10,10,10};
-byte servoMaxCmd[N_SERVOS] = {170,170,170,170,170,170};
+byte servoMinCmd[N_SERVOS] = {0,40,0,0,0,0};
+byte servoMaxCmd[N_SERVOS] = {180,180,170,180,90,180};
 
 // Servo min and max potentiometer feedback
-int servoMinFeedback[N_SERVOS] = {0,0,0,0,0,0};
-int servoMaxFeedback[N_SERVOS] = {1023,1023,1023,1023,1023,1023};
+int servoMinFeedback[N_SERVOS] = {50,50,50,50,50,50};
+int servoMaxFeedback[N_SERVOS] = {960,950,950,960,830,1023};
 
 //PID variables
-int KP[N_SERVOS] = {10,10,10,10,10,10};
+int KP[N_SERVOS] = {1,1,1,1,45,1}; // Do not vibrate at 225
 int KD[N_SERVOS] = {0,0,0,0,0,0};
-int KI[N_SERVOS] = {0,0,0,0,0,0};
+int KI[N_SERVOS] = {0,0,0,0,5,0};
 
 // ==============================================
 //  End Servo parameters
@@ -97,7 +97,7 @@ unsigned long curMillis;
 
 void setup()
 {
-  Serial.begin(9600);
+  Serial.begin(BAUDRATE);
 
   // Initialize multiplexer control pins
   pinMode(MUX_S0, OUTPUT);
@@ -269,17 +269,186 @@ void parseData()
   // -------- WRITE MULTIPLE --------
   if(command == 'W')
   {
-    Serial.print("<W");
-    while((token = strtok(NULL, ",")) != NULL)
+    // Check if next token is a register name (config) or motor ID
+    token = strtok(NULL, ",");
+    if(token == NULL) return;
+    
+    // Try to determine if it's a register or motor ID
+    int firstVal = atoi(token);
+    boolean isMotorId = (firstVal >= 0 && firstVal < N_SERVOS && strlen(token) <= 2);
+    
+    if(!isMotorId)
     {
-      int id = atoi(token);
+      // Configuration register write
+      if(strcmp(token, "STP") == 0)
+      {
+        Serial.print("<W,STP");
+        for(byte i = 0; i < N_SERVOS; i++)
+        {
+          token = strtok(NULL, ",");
+          if(token == NULL) break;
+          int value = atoi(token);
+          servoStartPos[i] = value;
+          Serial.print(",");
+          Serial.print(servoStartPos[i]);
+        }
+        Serial.println(">");
+        return;
+      }
+      else if(strcmp(token, "MINCMD") == 0)
+      {
+        Serial.print("<W,MINCMD");
+        for(byte i = 0; i < N_SERVOS; i++)
+        {
+          token = strtok(NULL, ",");
+          if(token == NULL) break;
+          int value = atoi(token);
+          servoMinCmd[i] = value;
+          Serial.print(",");
+          Serial.print(servoMinCmd[i]);
+        }
+        Serial.println(">");
+        return;
+      }
+      else if(strcmp(token, "MAXCMD") == 0)
+      {
+        Serial.print("<W,MAXCMD");
+        for(byte i = 0; i < N_SERVOS; i++)
+        {
+          token = strtok(NULL, ",");
+          if(token == NULL) break;
+          int value = atoi(token);
+          servoMaxCmd[i] = value;
+          Serial.print(",");
+          Serial.print(servoMaxCmd[i]);
+        }
+        Serial.println(">");
+        return;
+      }
+      else if(strcmp(token, "MINFB") == 0)
+      {
+        Serial.print("<W,MINFB");
+        for(byte i = 0; i < N_SERVOS; i++)
+        {
+          token = strtok(NULL, ",");
+          if(token == NULL) break;
+          int value = atoi(token);
+          servoMinFeedback[i] = value;
+          Serial.print(",");
+          Serial.print(servoMinFeedback[i]);
+        }
+        Serial.println(">");
+        return;
+      }
+      else if(strcmp(token, "MAXFB") == 0)
+      {
+        Serial.print("<W,MAXFB");
+        for(byte i = 0; i < N_SERVOS; i++)
+        {
+          token = strtok(NULL, ",");
+          if(token == NULL) break;
+          int value = atoi(token);
+          servoMaxFeedback[i] = value;
+          Serial.print(",");
+          Serial.print(servoMaxFeedback[i]);
+        }
+        Serial.println(">");
+        return;
+      }
+      else if(strcmp(token, "KP") == 0)
+      {
+        Serial.print("<W,KP");
+        for(byte i = 0; i < N_SERVOS; i++)
+        {
+          token = strtok(NULL, ",");
+          if(token == NULL) break;
+          int value = atoi(token);
+          KP[i] = value;
+          Serial.print(",");
+          Serial.print(KP[i]);
+        }
+        Serial.println(">");
+        return;
+      }
+      else if(strcmp(token, "KD") == 0)
+      {
+        Serial.print("<W,KD");
+        for(byte i = 0; i < N_SERVOS; i++)
+        {
+          token = strtok(NULL, ",");
+          if(token == NULL) break;
+          int value = atoi(token);
+          KD[i] = value;
+          Serial.print(",");
+          Serial.print(KD[i]);
+        }
+        Serial.println(">");
+        return;
+      }
+      else if(strcmp(token, "KI") == 0)
+      {
+        Serial.print("<W,KI");
+        for(byte i = 0; i < N_SERVOS; i++)
+        {
+          token = strtok(NULL, ",");
+          if(token == NULL) break;
+          int value = atoi(token);
+          KI[i] = value;
+          Serial.print(",");
+          Serial.print(KI[i]);
+        }
+        Serial.println(">");
+        return;
+      }
+      else if(strcmp(token, "CMOD") == 0)
+      {
+        token = strtok(NULL, ",");
+        if(token != NULL)
+        {
+          strcpy(PID, token);
+          Serial.print("<W,CMOD,");
+          Serial.print(PID);
+          Serial.println(">");
+        }
+        else
+        {
+          Serial.println("<W,CMOD,KO>");
+        }
+        return;
+      }
+      else if(strcmp(token, "BAUDRATE") == 0)
+      { 
+        if(token == NULL) break;
+          int value = atoi(token);
+        BAUDRATE = value;
+        Serial.println("<W,BAUDRATE," + String(BAUDRATE) + ">");
+        Serial.end();
+        Serial.begin(BAUDRATE);
+        return;
+      }
+      else
+      {
+        // Unknown register
+        Serial.println("<W,KO>");
+        return;
+      }
+    }
+    else
+    {
+      // Motor position write
+      Serial.print("<W");
+      
+      // Handle the first motor (already have the ID in firstVal)
+      int id = firstVal;
       token = strtok(NULL, ",");
-      if(token == NULL) break;
-
+      if(token == NULL) {
+        Serial.println(">");
+        return;
+      }
       int value = atoi(token);
       Serial.print(",");
       Serial.print(id);
-
+      
       if(id >= 0 && id < N_SERVOS)
       {
         targetServoPos[id] = value;
@@ -291,8 +460,32 @@ void parseData()
       {
         Serial.print(",KO");
       }
+      
+      // Handle remaining (id, value) pairs
+      while((token = strtok(NULL, ",")) != NULL)
+      {
+        id = atoi(token);
+        token = strtok(NULL, ",");
+        if(token == NULL) break;
+
+        value = atoi(token);
+        Serial.print(",");
+        Serial.print(id);
+
+        if(id >= 0 && id < N_SERVOS)
+        {
+          targetServoPos[id] = value;
+          writeServoPos(id);
+          Serial.print(",");
+          Serial.print(targetServoPos[id]);
+        }
+        else
+        {
+          Serial.print(",KO");
+        }
+      }
+      Serial.println(">");
     }
-    Serial.println(">");
     return;
   }
 
@@ -349,10 +542,125 @@ void parseData()
   // -------- READ ALL (FEEDBACK + CURRENT + COMMAND POS) MULTIPLE --------
   if(command == 'R')
   {
-    Serial.print("<R");
-    while((token = strtok(NULL, ",")) != NULL)
+    // Check if next token is a register name (config) or motor ID (telemetry)
+    token = strtok(NULL, ",");
+    if(token == NULL) return;
+    
+    // Try to determine if it's a register or motor ID
+    int firstVal = atoi(token);
+    boolean isMotorId = (firstVal >= 0 && firstVal < N_SERVOS && strlen(token) <= 2);
+    
+    if(!isMotorId)
     {
-      int id = atoi(token);
+      // Configuration register read
+      if(strcmp(token, "STP") == 0)
+      {
+        Serial.print("<R,STP");
+        for(byte i = 0; i < N_SERVOS; i++)
+        {
+          Serial.print(",");
+          Serial.print(servoStartPos[i]);
+        }
+        Serial.println(">");
+        return;
+      }
+      else if(strcmp(token, "MINCMD") == 0)
+      {
+        Serial.print("<R,MINCMD");
+        for(byte i = 0; i < N_SERVOS; i++)
+        {
+          Serial.print(",");
+          Serial.print(servoMinCmd[i]);
+        }
+        Serial.println(">");
+        return;
+      }
+      else if(strcmp(token, "MAXCMD") == 0)
+      {
+        Serial.print("<R,MAXCMD");
+        for(byte i = 0; i < N_SERVOS; i++)
+        {
+          Serial.print(",");
+          Serial.print(servoMaxCmd[i]);
+        }
+        Serial.println(">");
+        return;
+      }
+      else if(strcmp(token, "MINFB") == 0)
+      {
+        Serial.print("<R,MINFB");
+        for(byte i = 0; i < N_SERVOS; i++)
+        {
+          Serial.print(",");
+          Serial.print(servoMinFeedback[i]);
+        }
+        Serial.println(">");
+        return;
+      }
+      else if(strcmp(token, "MAXFB") == 0)
+      {
+        Serial.print("<R,MAXFB");
+        for(byte i = 0; i < N_SERVOS; i++)
+        {
+          Serial.print(",");
+          Serial.print(servoMaxFeedback[i]);
+        }
+        Serial.println(">");
+        return;
+      }
+      else if(strcmp(token, "KP") == 0)
+      {
+        Serial.print("<R,KP");
+        for(byte i = 0; i < N_SERVOS; i++)
+        {
+          Serial.print(",");
+          Serial.print(KP[i]);
+        }
+        Serial.println(">");
+        return;
+      }
+      else if(strcmp(token, "KD") == 0)
+      {
+        Serial.print("<R,KD");
+        for(byte i = 0; i < N_SERVOS; i++)
+        {
+          Serial.print(",");
+          Serial.print(KD[i]);
+        }
+        Serial.println(">");
+        return;
+      }
+      else if(strcmp(token, "KI") == 0)
+      {
+        Serial.print("<R,KI");
+        for(byte i = 0; i < N_SERVOS; i++)
+        {
+          Serial.print(",");
+          Serial.print(KI[i]);
+        }
+        Serial.println(">");
+        return;
+      }
+      else if(strcmp(token, "CMOD") == 0)
+      {
+        Serial.print("<R,CMOD,");
+        Serial.print(PID);
+        Serial.println(">");
+        return;
+      }
+      else if(strcmp(token, "BAUDRATE") == 0)
+      {
+        Serial.print("<R,BAUDRATE,");
+        Serial.print(BAUDRATE);
+        Serial.println(">");
+        return;
+      }
+    }
+    else
+    {
+      // Telemetry read (original behavior)
+      Serial.print("<R");
+      int id = firstVal;
       Serial.print(",(");
       Serial.print(id);
 
@@ -372,8 +680,33 @@ void parseData()
       {
         Serial.print(",KO");
       }
+      
+      // Read remaining motor IDs
+      while((token = strtok(NULL, ",")) != NULL)
+      {
+        id = atoi(token);
+        Serial.print(",(");
+        Serial.print(id);
+
+        if(id >= 0 && id < N_SERVOS)
+        {
+          servoFeedbackPos[id] = readServoFeedbackPos(id);
+          servoCurrentmA[id] = readServoCurrent(id);
+          Serial.print(",");
+          Serial.print(servoFeedbackPos[id]);
+          Serial.print(",");
+          Serial.print(servoCurrentmA[id]);
+          Serial.print(",");
+          Serial.print(targetServoPos[id]);
+          Serial.print(")");
+        }
+        else
+        {
+          Serial.print(",KO");
+        }
+      }
+      Serial.println(">");
     }
-    Serial.println(">");
     return;
   }
 
@@ -479,5 +812,5 @@ int readServoCurrent(byte id)
   selectMuxChannel(muxChannel);
   int rawValue = analogRead(MUX_OUT);
   
-  return (rawValue * 5 * 1000) / (1023 * 1);
+  return (rawValue * 5 * 1000) / (1023 * 1); // Resistor used is 1 ohm.
 }
